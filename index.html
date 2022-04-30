@@ -188,7 +188,7 @@
 				}
 				//modification des données JSON
 				let request2 = new XMLHttpRequest();
-				request2.open('POST', requestURL, true);
+				request2.open('PUT', requestURL, true);
 				request2.setRequestHeader("Content-Type", "application/json");
 				let json_send = JSON.stringify(scores);
 				request2.send(json_send);
