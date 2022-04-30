@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+
+	<head>
+		<title>Simon</title>
+		<meta charset="UTF-8"/>
+		<meta name="author" content="Titouan Hinschberger"/>
+		<meta name="description" content="Jeu Simon en ligne"/>
+		<meta name="keywords" content="simon,memory,game,color"/>
+		<meta name="generator" content="Visual Studio Code"/>
+		<meta NAME="Copyright" CONTENT="Coryright © Hinschberger Titouan">
+		<link rel="icon" href="icon.ico">
+	
+		<style>
+			@font-face {
+				font-family: "simon";
+				src: url('Psilent.otf');}
+
+			body{background-color: #1f2227;}
+
+			#title{display: inline; text-align: center; margin-right: 0.5em; font-family: 'simon'; font-size: 3.5em ;color: white;}
+			#bplay{display: inline; max-width: 5%; vertical-align:bottom; margin-left: 0.5em;}
+
+			#main {text-align: center; width: 100%;}
+			.line {display: block;}
+
+			.circle {
+				width: 18em;
+				height: 18em;
+				-webkit-border-radius: 9em;
+				-moz-border-radius: 9em;
+				border-radius: 9em;
+				margin: 1em;
+				display: inline-block;
+			}
+
+			#circle1 {background: darkgreen;}
+			#circle2 {background: darkred;}
+			#circle3 {background: darkgoldenrod;}
+			#circle4 {background: darkblue;}
+
+			#bestscores{margin-top: 2em; display:inline-block}
+			h2{text-align: center; font-family: 'simon'; font-size: 2em ;color: BlueViolet;}
+			.top{text-align: center; font-family: 'simon'; font-size: 1.5em ;color: white; margin-bottom: 0.5em;}
+			#top1{color: gold}
+			#top2{color: silver}
+			#top3{color: #a87000}
+
+		</style>
+	
+	<head>
+	
+	<body>
+	
+		<div id="main">
+			<h1 id='title'>SIMON</h1>
+			<img id='bplay' src="play.png" alt="PLAY" onclick="play()">
+			<div class='line'>
+				<div class="circle" id="circle1" onclick="push('g')"></div>
+				<div class="circle" id="circle2" onclick="push('r')"></div>
+		  	</div>
+		  	<div class='line'>
+				<div class="circle" id="circle3" onclick="push('y')"></div>
+				<div class="circle" id="circle4" onclick="push('b')"></div>
+		  	</div>
+			<ol id="bestscores">
+				<h2>Best scores</h2>
+				<li class="top" id="top1"></li>
+				<li class="top" id="top2"></li>
+				<li class="top" id="top3"></li>
+				<li class="top" id="top4"></li>
+				<li class="top" id="top5"></li>
+				<li class="top" id="top6"></li>
+				<li class="top" id="top7"></li>
+				<li class="top" id="top8"></li>
+				<li class="top" id="top9"></li>
+				<li class="top" id="top10"></li>
+			</ol>
+		</div>
+	
+	</body>
+	
+	<script>
+
+		// Variables Eléments HTML
+		const bplay = document.getElementById("bplay");
+		const gbutton = document.getElementById("circle1");
+		const rbutton = document.getElementById("circle2");
+		const ybutton = document.getElementById("circle3");
+		const bbutton = document.getElementById("circle4");
+		const bestscores = document.getElementById("bestscores");
+		const top1 = document.getElementById("top1");
+		const top2 = document.getElementById("top2");
+		const top3 = document.getElementById("top3");
+		const top4 = document.getElementById("top4");
+		const top5 = document.getElementById("top5");
+		const top6 = document.getElementById("top6");
+		const top7 = document.getElementById("top7");
+		const top8 = document.getElementById("top8");
+		const top9 = document.getElementById("top9");
+		const top10 = document.getElementById("top10");
+		
+		// Variables globales
+		var disabled = true;
+		var score = 0;
+		var out = null;
+		var combinaison = [];
+		var combirun = [];
+		const letters = ['g','r','y','b'];
+
+		// Initialisation de l'OscillatorNode
+		var context = new AudioContext();
+		var o = context.createOscillator();
+		o.type = "sine";
+		o.connect(context.destination);
+		o.start();
+		o.disconnect(context.destination);
+
+		//Chargement des donnees JSON des scores
+		var scores = null
+		var requestURL = 'https://lorddarksider.github.io/Simon/scores.json';
+		var request = new XMLHttpRequest();
+		request.open('GET', requestURL);
+		request.responseType = 'text';
+		request.send();
+
+		request.onload = function() {
+			var json = request.response;
+			scores = JSON.parse(json);
+		};
+
+
+		// FONCTIONS
+
+		function color(letter) {
+			signal(letter);
+			if(letter=='g') {gbutton.style.backgroundColor = 'limegreen'; setTimeout(resetcolor ,500, 'g');}
+			else if(letter=='r') {rbutton.style.backgroundColor = 'red'; setTimeout(resetcolor ,500, 'r');}
+			else if(letter=='y') {ybutton.style.backgroundColor = 'yellow'; setTimeout(resetcolor ,500, 'y');}
+			else if(letter=='b') {bbutton.style.backgroundColor = 'blue'; setTimeout(resetcolor ,500, 'b');}
+		};
+		
+		function resetcolor(letter) {
+			o.disconnect(context.destination);
+			if(letter=='g') {gbutton.style.backgroundColor = 'darkgreen'}
+			else if(letter=='r') {rbutton.style.backgroundColor = 'darkred'}
+			else if(letter=='y') {ybutton.style.backgroundColor = 'darkgoldenrod'}
+			else if(letter=='b') {bbutton.style.backgroundColor = 'darkblue';}
+		};
+
+		function signal(letter){
+			o.type = "triangle";
+			if(letter=='g') {o.frequency.value= 500;}
+			else if(letter=='r') {o.frequency.value= 600;}
+			else if(letter=='y') {o.frequency.value= 700;}
+			else if(letter=='b') {o.frequency.value= 800;}
+			o.connect(context.destination);
+		};
+
+		function push(letter) {
+			if (disabled == false) {
+				clearTimeout(out);
+				color(letter);
+				if (letter != combirun.shift(0)) {return over()}
+				if (combirun.length == 0) {score+=1; return round()}
+				else{out = setTimeout(timeout, 5000)};
+			}
+			
+		};
+
+		function over() {
+			o.type = "sawtooth";
+			o.frequency.value= 100;
+			setTimeout(over2 ,500);
+		};
+
+		function over2() {
+			alert('GAME OVER' + '\nScore : ' + score);
+			if (score > 0 && (score > scores.values[scores.values.length-1] || scores.values.length < 10)){
+				let n = scores.values.length-1
+				while ( score >= scores.values[n]){n--;alert(n)}
+				let pseudo = prompt(('You are in the TOP '+String(n+2)+' !\nEnter your pseudo:'));
+				scores.values.splice(n+1,0,score);
+				scores.players.splice(n+1,0,pseudo);
+				if (scores.values.lenght > 10){
+					scores.values.pop();
+					scores.players.pop();
+				}
+				//modification des données JSON
+				let request2 = new XMLHttpRequest();
+				request2.open('POST', requestURL, true);
+				request2.setRequestHeader("Content-Type", "application/json");
+				let json_send = JSON.stringify(scores);
+				request2.send(json_send);
+			};
+			//location.reload();
+		};
+
+		function timeout(){
+			color(combirun.shift(0)); //a changer
+			over();
+		};
+
+		function add() {
+			return(letters[ Math.floor(Math.random()*(3 + 1)) ])	
+		};
+
+		function demo() {
+			if (combirun.length == 1) {color(combirun.shift(0)); setTimeout(repeat, 1000)}
+			else {color(combirun.shift(0)); setTimeout(demo, 1000)}
+		};
+
+		function repeat() {
+			combirun = combinaison.slice()
+			disabled = false;
+			out = setTimeout(timeout, 5000);
+		};
+
+		function round() {
+			disabled = true;
+			combinaison.push(letters[ Math.floor(Math.random()*(3 + 1)) ]);
+			combirun = combinaison.slice()
+			setTimeout(demo, 2000);
+		};
+
+		function play() {
+			bestscores.style.display = "none"
+			rbutton.style.display = "inline-block"
+			gbutton.style.display = "inline-block"
+			ybutton.style.display = "inline-block"
+			bbutton.style.display = "inline-block"
+			bplay.style.display = "none"
+			combinaison = [];
+			score = 0
+			round();
+		};
+
+		function ranking() {
+			top = [top1,top2,top3,top4,top5,top6,top7,top8,top9,top10];
+			for (let i=0; i < 9; i++) {
+				top[i].innerHTML(scores.players[i]+' : '+String(scores.values[i]))
+			}
+		};
+
+	</script>
+
+</html>
