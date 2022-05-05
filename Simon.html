@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+
+	<head>
+		<title>Simon</title>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="author" content="T.Hinschberger"/>
+		<meta name="description" content="Jeu Simon en ligne"/>
+		<meta name="keywords" content="simon,memory,game,color"/>
+		<meta NAME="Copyright" CONTENT="Coryright © T.Hinschberger 2022">
+		<link rel="icon" href="icon.ico">
+	
+		<style>
+			@font-face {
+				font-family: "simon";
+				src: url('Psilent.otf');}
+
+			body{background-color: #1f2227; user-select: none;}
+
+			#title{display: inline; text-align: center; margin-right: 0.5em; font-family: 'simon'; font-size: 3.5em ;color: white;}
+			#bplay{display: inline; width:4%; vertical-align:bottom; margin-left: 0.5em;}
+
+			#main {text-align: center}
+			.line {display: block;}
+
+			.circle {
+				width: 22vw;
+				height: 22vw;
+				border-radius: 15vw;
+				margin: 1em;
+				display: inline-block;
+			}
+
+			#circle1 {background: darkgreen;}
+			#circle2 {background: darkred;}
+			#circle3 {background: darkgoldenrod;}
+			#circle4 {background: darkblue;}
+
+		</style>
+	
+	<head>
+	
+	<body>
+	
+		<div id="main">
+			<h1 id='title'>SIMON</h1>
+			<img id='bplay' src="play.png" alt="PLAY" onclick="play()">
+			<div class='line'>
+				<div class="circle" id="circle1" onclick="push('g')"></div>
+				<div class="circle" id="circle2" onclick="push('r')"></div>
+		  	</div>
+		  	<div class='line'>
+				<div class="circle" id="circle3" onclick="push('y')"></div>
+				<div class="circle" id="circle4" onclick="push('b')"></div>
+		  	</div>
+		</div>
+	
+	</body>
+	
+	<script>
+
+		// Variables Eléments HTML
+		const bplay = document.getElementById("bplay");
+		const gbutton = document.getElementById("circle1");
+		const rbutton = document.getElementById("circle2");
+		const ybutton = document.getElementById("circle3");
+		const bbutton = document.getElementById("circle4");
+		const allbuttons = document.getElementsByClassName("circle");
+		
+		// Variables globales
+		var disabled = true;
+		var score = 0;
+		var out = null;
+		var combinaison = [];
+		var combirun = [];
+		const letters = ['g','r','y','b'];
+
+		// Initialisation de l'OscillatorNode
+		var context = new AudioContext();
+		var o = context.createOscillator();
+		o.type = "sine";
+		o.connect(context.destination);
+		o.start();
+		o.disconnect(context.destination);
+
+
+		// FONCTIONS
+
+		function color(letter) {
+			signal(letter);
+			if(letter=='g') {gbutton.style.backgroundColor = 'limegreen'; setTimeout(resetcolor ,500, 'g');}
+			else if(letter=='r') {rbutton.style.backgroundColor = 'red'; setTimeout(resetcolor ,500, 'r');}
+			else if(letter=='y') {ybutton.style.backgroundColor = 'yellow'; setTimeout(resetcolor ,500, 'y');}
+			else if(letter=='b') {bbutton.style.backgroundColor = 'blue'; setTimeout(resetcolor ,500, 'b');}
+		};
+		
+		function resetcolor(letter) {
+			o.disconnect(context.destination);
+			if(letter=='g') {gbutton.style.backgroundColor = 'darkgreen'}
+			else if(letter=='r') {rbutton.style.backgroundColor = 'darkred'}
+			else if(letter=='y') {ybutton.style.backgroundColor = 'darkgoldenrod'}
+			else if(letter=='b') {bbutton.style.backgroundColor = 'darkblue';}
+		};
+
+		function signal(letter){
+			o.type = "triangle";
+			if(letter=='g') {o.frequency.value= 500;}
+			else if(letter=='r') {o.frequency.value= 600;}
+			else if(letter=='y') {o.frequency.value= 700;}
+			else if(letter=='b') {o.frequency.value= 800;}
+			o.connect(context.destination);
+		};
+
+		function push(letter) {
+			if (disabled == false) {
+				clearTimeout(out);
+				color(letter);
+				if (letter != combirun.shift(0)) {return over()}
+				if (combirun.length == 0) {score+=1; return round()}
+				else{out = setTimeout(timeout, 5000)};
+			}
+			
+		};
+
+		function over() {
+			o.type = "sawtooth";
+			o.frequency.value= 100;
+			setTimeout(over2 ,500);
+		};
+
+		function over2() {
+			alert('GAME OVER' + '\nScore : ' + score);
+			location.reload();
+		};
+
+		function timeout(){
+			color(combirun.shift(0));
+			over();
+		};
+
+		function add() {
+			return(letters[ Math.floor(Math.random()*(3 + 1)) ])	
+		};
+
+		function demo() {
+			if (combirun.length == 1) {color(combirun.shift(0)); setTimeout(repeat, 1000)}
+			else {color(combirun.shift(0)); setTimeout(demo, 1000)}
+		};
+
+		function repeat() {
+			combirun = combinaison.slice()
+			disabled = false;
+			out = setTimeout(timeout, 5000);
+		};
+
+		function round() {
+			disabled = true;
+			combinaison.push(letters[ Math.floor(Math.random()*(3 + 1)) ]);
+			combirun = combinaison.slice()
+			setTimeout(demo, 2000);
+		};
+
+		function play() {
+			rbutton.style.display = "inline-block"
+			gbutton.style.display = "inline-block"
+			ybutton.style.display = "inline-block"
+			bbutton.style.display = "inline-block"
+			bplay.style.display = "none"
+			combinaison = [];
+			score = 0
+			round();
+		};
+
+		// for mobile terminal
+		function window_size(){
+			if(screen.width<=480){for (var i=0 ; i<allbuttons.length ; i++) {allbuttons[i].style = 'width: 95%; height: 19vh; margin: 0 auto; margin-top: 1em; display: block; border: none; border-radius: 0;'}; bplay.style.width = '15%'}
+			else{for (var i=0 ; i<allbuttons.length ; i++) {allbuttons[i].style = 'width: 22vw; height: 22vw; border-radius: 15vw; margin: 1em; display: inline-block;'}; bplay.style.width = '4%'};
+		};
+
+		window.addEventListener('resize', window_size);
+		window_size();
+
+	</script>
+
+</html>
